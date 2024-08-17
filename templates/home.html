@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/home.css')}}">
+    <link rel="icon" href="{{url_for('static',filename='images/logoInv.png')}}">
+    <title>Cellular Automata</title>
+</head>
+<body>
+    <div id="header">
+        <div id="logoDiv">
+            <img src="{{url_for('static',filename='images/logo.png')}}" alt="logo">
+            <h1>Game of Life</h1>
+        </div>
+        <div id="subText">
+            <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life"><h2>- John Conway</h2></a>
+        </div>
+    </div>
+
+    <div id="main">
+        
+        <div id="inputPrompt">
+            <div>
+                <label for="generation">Generations:</label>
+                <input type="number" min="0" id="generation" class="inp">
+            </div>
+            <div>
+                <label for="rows">Rows:</label>
+                <input type="number" min="0" id="rows" class="inp">
+            </div>
+            <div>
+                <label for="columns">Columns:</label>
+                <input type="number" min="0" id="columns" class="inp">
+            </div>
+            <input type="submit" id="submit" value="Initiate">
+        </div>
+
+        <div id="initiated">
+            <div id="lifeGrid"></div>
+            <div id="infographics">
+                <pre>
+                    <h1>Generation: 0</h1>
+                    <h1>Population: 0</h1>
+                </pre>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="{{url_for('static',filename='javascript/home.js')}}"></script>
+</body>
+</html>
