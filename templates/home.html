@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{url_for('static',filename='css/home.css')}}">
     <link rel="icon" href="{{url_for('static',filename='images/logoInv.png')}}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Cellular Automata</title>
 </head>
 <body>
     <div id="header">
         <div id="logoDiv">
-            <img src="{{url_for('static',filename='images/logo.png')}}" alt="logo">
+            <img src="{{url_for('static',filename='images/logoInv.png')}}" alt="logo">
             <h1>Game of Life</h1>
         </div>
         <div id="subText">
@@ -34,16 +35,22 @@
                 <input type="number" min="0" id="columns" class="inp">
             </div>
             <input type="submit" id="submit" value="Initiate">
+            <input type="button" id="pauseButton" value="Play / Pause">
         </div>
 
         <div id="initiated">
             <div id="lifeGrid"></div>
             <div id="infographics">
-                <pre>
-                    <h1>Generation: 0</h1>
-                    <h1>Population: 0</h1>
-                </pre>
+                <div id="textData">
+                    <pre>
+                        <h1> Infographics:</h1>
+                        <h2> Generation: 0 Population: 0</h2>
+                    </pre>
+                </div>
+                <canvas id="myChart"></canvas>
+
             </div>
+            
         </div>
 
     </div>

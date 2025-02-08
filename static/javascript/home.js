@@ -1,5 +1,7 @@
 
 const submit = document.getElementById("submit");
+let myChart
+let isPaused = false;
 
 submit.onclick = function() {
     generateLifeGrid("lifeGrid","rows","columns");
@@ -7,6 +9,7 @@ submit.onclick = function() {
     const generations = document.getElementById("generation").value;
     const rows = document.getElementById("rows").value;
     const columns = document.getElementById("columns").value;
+    
     const form = {
         generations : generations,
         rows : rows,
@@ -50,12 +53,22 @@ function generateLifeGrid(divId,rows,columns) {
     }
 }
 
-function pause(milliseconds) {
-    return new Promise(resolve => setTimeout(resolve, milliseconds));
-}
+document.getElementById("pauseButton").addEventListener("click", function () {
+    isPaused = !isPaused;
+});
 
 const simulate = async function(simulationData,generations,rows,columns,pauseTime) {
     for(let i = 0;i<generations;i++){
+
+        while (isPaused) {
+            await new Promise(resolve => setTimeout(resolve, 100)); 
+        }
+
+        if (myChart) {
+            myChart.destroy();
+        }
+
+        
         for(let j = 0;j<rows;j++){
             for(let k =0;k<columns;k++){
                 if (simulationData[i][0][j][k] == 0){
@@ -66,15 +79,30 @@ const simulate = async function(simulationData,generations,rows,columns,pauseTim
                 }
             }
         }
-        const gridInfo = document.getElementById("infographics");
+        const gridInfo = document.getElementById("textData");
         gridInfo.innerHTML=
-        
+
         `<pre>
-            <h1>Generation: ${i}</h1>
-            <h1>Population: ${simulationData[i][1]}</h1>
+            <h1> Infographics:</h1>
+            <h2> Generation: ${i+1} Population: ${simulationData[i][1]}</h2>
         </pre>`;
 
-        await pause(pauseTime);
+        const ctx = document.getElementById('myChart').getContext('2d');
+        let populationArray = Object.values(simulationData).slice(-(i + 1)).map(entry => entry[1]);
+        let labelss = Array.from({ length: populationArray.length }, (_, i) => i + 1);
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelss,
+                datasets: [{
+                    label: 'Population Trends',
+                    data: populationArray,
+                    borderColor: 'green',
+                    fill: true
+                }]
+            }
+        });
+        await new Promise(resolve => setTimeout(resolve, pauseTime));
     }
     
 }
