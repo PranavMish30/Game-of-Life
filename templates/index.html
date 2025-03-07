@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Simulation Visualizer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <style>
+        .grid-container {
+            display: grid;
+            gap: 1px;
+            background-color: #ccc;
+            padding: 1px;
+            margin: 20px auto;
+        }
+        .grid-cell {
+            background-color: white;
+            aspect-ratio: 1;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center my-4">Animal Simulation Visualizer</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-xl font-semibold">Simulation Controls</h2>
+                </div>
+                <div class="space-x-2">
+                    <button id="init-btn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">Initialize</button>
+                    <button id="step-btn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">Step</button>
+                    <button id="generation-btn" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition">Complete Generation</button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="border p-4 rounded-md bg-gray-50">
+                    <p><strong>Generation:</strong> <span id="generation-counter">0</span></p>
+                    <p><strong>Step:</strong> <span id="step-counter">0</span></p>
+                    <p><strong>Population Size:</strong> <span id="population-counter">0</span></p>
+                </div>
+                <div class="border p-4 rounded-md bg-gray-50">
+                    <p><strong>Density Legend:</strong></p>
+                    <div class="flex items-center mt-2">
+                        <div class="w-6 h-6 bg-white border"></div>
+                        <span class="ml-2">0 animals</span>
+                    </div>
+                    <div class="flex items-center mt-1">
+                        <div class="w-6 h-6 bg-blue-100 border"></div>
+                        <span class="ml-2">1 animal</span>
+                    </div>
+                    <div class="flex items-center mt-1">
+                        <div class="w-6 h-6 bg-blue-300 border"></div>
+                        <span class="ml-2">2 animals</span>
+                    </div>
+                    <div class="flex items-center mt-1">
+                        <div class="w-6 h-6 bg-blue-500 border"></div>
+                        <span class="ml-2">3 animals</span>
+                    </div>
+                    <div class="flex items-center mt-1">
+                        <div class="w-6 h-6 bg-blue-700 border"></div>
+                        <span class="ml-2">4+ animals</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="grid-container" class="grid-container"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gridContainer = document.getElementById('grid-container');
+            const initBtn = document.getElementById('init-btn');
+            const stepBtn = document.getElementById('step-btn');
+            const generationBtn = document.getElementById('generation-btn');
+            const generationCounter = document.getElementById('generation-counter');
+            const stepCounter = document.getElementById('step-counter');
+            const populationCounter = document.getElementById('population-counter');
+            
+            let gridSize = [10, 10];
+            
+            // Disable buttons initially
+            stepBtn.disabled = true;
+            generationBtn.disabled = true;
+            stepBtn.classList.add('opacity-50');
+            generationBtn.classList.add('opacity-50');
+            
+            // Initialize simulation
+            initBtn.addEventListener('click', async () => {
+                const response = await fetch('/api/init');
+                const data = await response.json();
+                
+                gridSize = data.gridSize;
+                
+                // Update UI
+                updateGrid(data.grid);
+                updateCounters(data.generation, data.step, data.populationSize);
+                
+                // Enable buttons
+                stepBtn.disabled = false;
+                generationBtn.disabled = false;
+                stepBtn.classList.remove('opacity-50');
+                generationBtn.classList.remove('opacity-50');
+            });
+            
+            // Step simulation
+            stepBtn.addEventListener('click', async () => {
+                const response = await fetch('/api/step');
+                const data = await response.json();
+                
+                // Update UI
+                updateGrid(data.grid);
+                updateCounters(data.generation, data.step, data.populationSize);
+            });
+            
+            // Complete generation
+            generationBtn.addEventListener('click', async () => {
+                const response = await fetch('/api/generation');
+                const data = await response.json();
+                
+                // Update UI
+                updateGrid(data.grid);
+                updateCounters(data.generation, data.step, data.populationSize);
+            });
+            
+            // Function to update the grid visualization
+            function updateGrid(grid) {
+                // Clear existing grid
+                gridContainer.innerHTML = '';
+                
+                // Set grid dimensions
+                gridContainer.style.gridTemplateColumns = `repeat(${gridSize[1]}, 1fr)`;
+                
+                // Calculate cell size based on available width
+                const containerWidth = Math.min(800, window.innerWidth - 40);
+                const cellSize = (containerWidth / gridSize[1]);
+                
+                // Create grid cells
+                for (let x = 0; x < gridSize[0]; x++) {
+                    for (let y = 0; y < gridSize[1]; y++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        
+                        // Set cell color based on animal count
+                        const count = grid[x][y];
+                        if (count === 0) {
+                            cell.style.backgroundColor = 'white';
+                        } else if (count === 1) {
+                            cell.style.backgroundColor = '#DBEAFE'; // blue-100
+                        } else if (count === 2) {
+                            cell.style.backgroundColor = '#93C5FD'; // blue-300
+                        } else if (count === 3) {
+                            cell.style.backgroundColor = '#3B82F6'; // blue-500
+                        } else {
+                            cell.style.backgroundColor = '#1D4ED8'; // blue-700
+                        }
+                        
+                        // Add tooltip with animal count
+                        cell.title = `Cell (${x},${y}): ${count} animals`;
+                        
+                        gridContainer.appendChild(cell);
+                    }
+                }
+            }
+            
+            // Function to update counters
+            function updateCounters(generation, step, population) {
+                generationCounter.textContent = generation;
+                stepCounter.textContent = step;
+                populationCounter.textContent = population;
+            }
+            
+            // Initial grid setup
+            function setupEmptyGrid() {
+                gridContainer.style.gridTemplateColumns = `repeat(${gridSize[1]}, 1fr)`;
+                
+                // Calculate cell size based on available width
+                const containerWidth = Math.min(800, window.innerWidth - 40);
+                
+                for (let x = 0; x < gridSize[0]; x++) {
+                    for (let y = 0; y < gridSize[1]; y++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.style.backgroundColor = 'white';
+                        cell.title = `Cell (${x},${y}): 0 animals`;
+                        gridContainer.appendChild(cell);
+                    }
+                }
+            }
+            
+            // Setup empty grid on page load
+            setupEmptyGrid();
+        });
+    </script>
+</body>
+</html>

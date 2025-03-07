@@ -79,6 +79,10 @@ body{
     background-color: rgb(235, 235, 235);
 }
 
+#pauseButton:hover{
+    background-color: rgb(215, 215, 215);
+}
+
 #initiated{
     height: 80vh;
     width: 100%;

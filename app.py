@@ -1,5 +1,9 @@
+from flask import Flask, render_template, jsonify
 import numpy as np
+import json
+import copy
 
+# Import your Animal class and simulation function
 class Animal:
     def __init__(self, x, y, grid_size, gene_code=None):
         self.x = x
@@ -97,9 +101,30 @@ class Animal:
             grid[self.x][self.y].append(offspring)  # Add offspring to the grid
         return offspring  # Return the new animal instance
 
+app = Flask(__name__)
 
-def simulate(grid_size=(10, 10), generations=10, steps_per_generation=10, min_density=0.2, max_density=3.0, reproduction_threshold=(1.0, 2.5)):
-    """Run a simulation with specified generations, steps per generation."""
+# Global variables to track simulation state
+animals = []
+grid = []
+grid_size = (10, 10)
+current_generation = 0
+current_step = 0
+min_density = 0.2
+max_density = 3.0
+reproduction_threshold = (1.0, 2.5)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/init', methods=['GET'])
+def init_simulation():
+    global animals, grid, grid_size, current_generation, current_step
+    
+    # Reset simulation state
+    current_generation = 0
+    current_step = 0
+    
     # Create an empty grid
     grid = [[[] for _ in range(grid_size[1])] for _ in range(grid_size[0])]
 
@@ -109,34 +134,78 @@ def simulate(grid_size=(10, 10), generations=10, steps_per_generation=10, min_de
     # Place animals in the grid
     for animal in animals:
         grid[animal.x][animal.y].append(animal)
+    
+    # Get grid data for the frontend
+    grid_data = get_grid_data()
+    
+    return jsonify({
+        'grid': grid_data,
+        'gridSize': grid_size,
+        'generation': current_generation,
+        'step': current_step,
+        'populationSize': len(animals)
+    })
 
-    # Run simulation for generations
-    for generation in range(generations):
-        print(f"Generation {generation + 1}")
+@app.route('/api/step', methods=['GET'])
+def step_simulation():
+    global animals, grid, current_step
+    
+    # Each animal thinks and acts
+    for animal in animals:
+        animal.think_and_act(grid)
+    
+    current_step += 1
+    
+    # Get grid data for the frontend
+    grid_data = get_grid_data()
+    
+    return jsonify({
+        'grid': grid_data,
+        'generation': current_generation,
+        'step': current_step,
+        'populationSize': len(animals)
+    })
+
+@app.route('/api/generation', methods=['GET'])
+def complete_generation():
+    global animals, grid, current_generation, current_step
+    
+    # Reset step counter
+    current_step = 0
+    current_generation += 1
+    
+    # Check survival and reproduction
+    next_generation = []
+    for animal in animals:
+        if animal.survive(grid, min_density, max_density):
+            next_generation.append(animal)  # Animal survives
         
-        # Run steps for each generation
-        for step in range(steps_per_generation):
-            print(f"  Step {step + 1}")
+            # Check reproduction conditions based on population density
+            current_density = len(grid[animal.x][animal.y])
+            if reproduction_threshold[0] <= current_density <= reproduction_threshold[1]:
+                next_generation.append(animal.reproduce(mutation_rate=0.2, grid=grid))  # Animal reproduces
 
-            # Each animal thinks and acts
-            for animal in animals:
-                animal.think_and_act(grid)
+    animals = next_generation  # Update population for next generation
+    
+    # Get grid data for the frontend
+    grid_data = get_grid_data()
+    
+    return jsonify({
+        'grid': grid_data,
+        'generation': current_generation,
+        'step': current_step,
+        'populationSize': len(animals)
+    })
 
-        # After all steps, check survival and reproduction
-        next_generation = []
-        for animal in animals:
-            if animal.survive(grid, min_density, max_density):
-                next_generation.append(animal)  # Animal survives
-            
-                # Check reproduction conditions based on population density
-                current_density = len(grid[animal.x][animal.y])
-                if reproduction_threshold[0] <= current_density <= reproduction_threshold[1]:
-                    next_generation.append(animal.reproduce(mutation_rate=0.2, grid=grid))  # Animal reproduces
+def get_grid_data():
+    """Convert the grid to a format suitable for the frontend."""
+    grid_data = []
+    for x in range(grid_size[0]):
+        row = []
+        for y in range(grid_size[1]):
+            row.append(len(grid[x][y]))  # Number of animals in this cell
+        grid_data.append(row)
+    return grid_data
 
-        animals = next_generation  # Update population for next generation
-
-        # Print population size after each generation
-        print(f"    Population size: {len(animals)}")
-
-# Run the simulation with default parameters
-simulate()
+if __name__ == '__main__':
+    app.run(debug=True)
